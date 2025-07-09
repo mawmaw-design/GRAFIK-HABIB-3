@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grafik Garis Komparatif Limbah Dapur (Tema Retro Futuristik)</title>
+    <!-- Memuat Tailwind CSS untuk styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Memuat Chart.js untuk membuat grafik -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Memuat Font (Orbitron & Roboto Mono) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Roboto Mono", monospace;
+        background-color: #1a1a2e;
+        color: #c0c0ff;
+        background-image: radial-gradient(
+          circle at 1px 1px,
+          rgba(255, 255, 255, 0.1) 1px,
+          transparent 0
+        );
+        background-size: 1.5rem 1.5rem;
+      }
+
+      .title-font {
+        font-family: "Orbitron", sans-serif;
+      }
+
+      .container-box {
+        background: rgba(13, 13, 26, 0.6);
+        border: 1px solid #ff00ff;
+        box-shadow: 0 0 25px rgba(255, 0, 255, 0.4),
+          inset 0 0 20px rgba(0, 255, 255, 0.3);
+        backdrop-filter: blur(5px);
+      }
+
+      .control-btn {
+        transition: all 0.2s ease-in-out;
+        border: 1px solid #ff00ff;
+        background-color: transparent;
+        color: #ff00ff;
+        text-shadow: 0 0 5px #ff00ff;
+      }
+      .control-btn:hover {
+        background-color: #ff00ff;
+        color: #1a1a2e;
+        box-shadow: 0 0 15px #ff00ff;
+      }
+      .control-btn.active {
+        background-color: #00ffff;
+        color: #1a1a2e;
+        border-color: #00ffff;
+        font-weight: bold;
+        box-shadow: 0 0 20px #00ffff, inset 0 0 5px #00ffff;
+      }
+    </style>
+  </head>
+  <body class="flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
+    <div class="container-box w-full max-w-7xl rounded-lg p-4 sm:p-6 lg:p-8">
+      <!-- Judul Utama -->
+      <div class="text-center mb-6">
+        <h1
+          class="text-3xl sm:text-4xl font-bold text-cyan-300 title-font uppercase tracking-widest"
+        >
+          Analisis Trajektori Sanitasi
+        </h1>
+        <p class="text-md text-magenta-400 mt-2">
+          Perbandingan Proporsi Pembuangan Limbah Dapur 2018 vs 2023
+        </p>
+      </div>
+
+      <!-- Kontrol Interaktif -->
+      <div class="flex flex-wrap justify-center gap-3 sm:gap-4 mb-6">
+        <div
+          class="flex flex-wrap justify-center items-center gap-2 bg-black bg-opacity-20 p-2 rounded border border-magenta-500"
+        >
+          <span
+            class="text-sm font-semibold text-cyan-300 self-center mx-2 title-font"
+            >SELECT_REGION:</span
+          >
+          <button
+            data-filter="Jawa"
+            class="control-btn active text-lg px-4 py-1 rounded-none"
+          >
+            Jawa
+          </button>
+          <button
+            data-filter="Sumatra"
+            class="control-btn text-lg px-4 py-1 rounded-none"
+          >
+            Sumatra
+          </button>
+          <button
+            data-filter="Kalimantan"
+            class="control-btn text-lg px-4 py-1 rounded-none"
+          >
+            Kalimantan
+          </button>
+          <button
+            data-filter="Sulawesi"
+            class="control-btn text-lg px-4 py-1 rounded-none"
+          >
+            Sulawesi
+          </button>
+          <button
+            data-filter="Nusa Tenggara & Bali"
+            class="control-btn text-lg px-4 py-1 rounded-none"
+          >
+            Bali_NT
+          </button>
+          <button
+            data-filter="Maluku & Papua"
+            class="control-btn text-lg px-4 py-1 rounded-none"
+          >
+            Maluku_Papua
+          </button>
+        </div>
+      </div>
+
+      <!-- Area untuk menempatkan grafik -->
+      <div class="relative h-[500px]">
+        <canvas id="myLineChart"></canvas>
+      </div>
+
+      <!-- Catatan Kaki -->
+      <div class="text-center mt-6">
+        <p class="text-sm text-gray-500">
+          DATA_SOURCE: RISKESDAS_2018 & SKI_2023
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // --- 1. PERSIAPAN DATA KOMPARATIF ---
+      const allData = [
+        { provinsi: "Kepulauan Riau", pulau: "Sumatra", data: [69.8, 83.1] },
+        { provinsi: "Sumatera Selatan", pulau: "Sumatra", data: [51.2, 67.3] },
+        { provinsi: "Sumatera Utara", pulau: "Sumatra", data: [52.0, 52.0] },
+        { provinsi: "Sumatera Barat", pulau: "Sumatra", data: [47.3, 49.6] },
+        { provinsi: "Aceh", pulau: "Sumatra", data: [48.7, 48.9] },
+        { provinsi: "Riau", pulau: "Sumatra", data: [48.8, 46.0] },
+        { provinsi: "Bengkulu", pulau: "Sumatra", data: [40.2, 46.7] },
+        { provinsi: "Lampung", pulau: "Sumatra", data: [36.8, 43.9] },
+        { provinsi: "Bangka Belitung", pulau: "Sumatra", data: [39.5, 35.2] },
+        { provinsi: "Jambi", pulau: "Sumatra", data: [39.3, 33.9] },
+        { provinsi: "DKI Jakarta", pulau: "Jawa", data: [83.3, 78.4] },
+        { provinsi: "Banten", pulau: "Jawa", data: [67.9, 70.4] },
+        { provinsi: "Jawa Barat", pulau: "Jawa", data: [65.2, 69.4] },
+        { provinsi: "Jawa Tengah", pulau: "Jawa", data: [55.5, 60.8] },
+        { provinsi: "Jawa Timur", pulau: "Jawa", data: [46.0, 51.3] },
+        { provinsi: "DI Yogyakarta", pulau: "Jawa", data: [25.3, 16.2] },
+        {
+          provinsi: "Nusa Tenggara Barat",
+          pulau: "Nusa Tenggara & Bali",
+          data: [47.9, 53.4],
+        },
+        { provinsi: "Bali", pulau: "Nusa Tenggara & Bali", data: [56.4, 41.6] },
+        {
+          provinsi: "Nusa Tenggara Timur",
+          pulau: "Nusa Tenggara & Bali",
+          data: [8.7, 7.6],
+        },
+        {
+          provinsi: "Kalimantan Timur",
+          pulau: "Kalimantan",
+          data: [61.1, 64.4],
+        },
+        {
+          provinsi: "Kalimantan Utara",
+          pulau: "Kalimantan",
+          data: [60.0, 52.6],
+        },
+        {
+          provinsi: "Kalimantan Barat",
+          pulau: "Kalimantan",
+          data: [47.6, 46.8],
+        },
+        {
+          provinsi: "Kalimantan Tengah",
+          pulau: "Kalimantan",
+          data: [41.0, 46.0],
+        },
+        {
+          provinsi: "Kalimantan Selatan",
+          pulau: "Kalimantan",
+          data: [35.5, 29.9],
+        },
+        { provinsi: "Sulawesi Utara", pulau: "Sulawesi", data: [65.8, 65.8] },
+        { provinsi: "Sulawesi Barat", pulau: "Sulawesi", data: [34.3, 51.4] },
+        { provinsi: "Sulawesi Selatan", pulau: "Sulawesi", data: [46.9, 50.3] },
+        { provinsi: "Sulawesi Tengah", pulau: "Sulawesi", data: [45.8, 41.2] },
+        { provinsi: "Gorontalo", pulau: "Sulawesi", data: [38.4, 38.9] },
+        {
+          provinsi: "Sulawesi Tenggara",
+          pulau: "Sulawesi",
+          data: [31.2, 32.5],
+        },
+        { provinsi: "Papua", pulau: "Maluku & Papua", data: [46.2, 62.6] },
+        {
+          provinsi: "Maluku Utara",
+          pulau: "Maluku & Papua",
+          data: [38.2, 38.9],
+        },
+        { provinsi: "Maluku", pulau: "Maluku & Papua", data: [37.3, 36.0] },
+        {
+          provinsi: "Papua Barat",
+          pulau: "Maluku & Papua",
+          data: [61.5, 37.4],
+        },
+      ];
+      const nationalData = {
+        label: "RATA-RATA NASIONAL",
+        data: [53.2, 55.8],
+        borderColor: "#ff4500",
+        backgroundColor: "rgba(255, 69, 0, 0.5)",
+        borderWidth: 2,
+        borderDash: [6, 6],
+        pointRadius: 5,
+        pointBackgroundColor: "#ff4500",
+      };
+      const lineColors = [
+        "#00ffff",
+        "#00ff00",
+        "#ffff00",
+        "#ff00ff",
+        "#ffa500",
+        "#00bfff",
+        "#adff2f",
+        "#ff69b4",
+        "#7b68ee",
+        "#ff4500",
+      ];
+
+      // --- 2. PLUGIN ANIMASI ARUS DATA ---
+      let particleSystems = [];
+      const animatedFlowPlugin = {
+        id: "animatedFlow",
+        afterDraw: (chart) => {
+          const ctx = chart.ctx;
+          ctx.save();
+
+          particleSystems.forEach((system) => {
+            system.particles.forEach((p) => {
+              // Update particle position
+              p.progress += system.speed;
+              if (p.progress > 1) p.progress = 0;
+
+              const currentPos = system.getPointAt(p.progress);
+
+              // Draw particle
+              ctx.beginPath();
+              ctx.arc(currentPos.x, currentPos.y, p.size, 0, Math.PI * 2);
+              ctx.fillStyle = p.color;
+              ctx.fill();
+            });
+          });
+          ctx.restore();
+        },
+      };
+
+      // --- 3. KONFIGURASI GRAFIK ---
+      const ctx = document.getElementById("myLineChart").getContext("2d");
+      const chart = new Chart(ctx, {
+        type: "line",
+        data: { labels: ["RISKESDAS 2018", "SKI 2023"], datasets: [] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            onProgress: function () {
+              requestAnimationFrame(() => chart.draw());
+            },
+            duration: 0, // Disable default animation to let plugin handle it
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "PROPORSI (%)",
+                color: "#00ffff",
+                font: { size: 18, family: "'Orbitron', sans-serif" },
+              },
+              grid: { color: "rgba(0, 255, 255, 0.2)" },
+              ticks: {
+                color: "#00ffff",
+                font: { size: 16, family: "'Roboto Mono', monospace" },
+              },
+            },
+            x: {
+              grid: { display: false },
+              ticks: {
+                color: "#c0c0ff",
+                font: { size: 16, family: "'Roboto Mono', monospace" },
+              },
+            },
+          },
+          plugins: {
+            legend: {
+              position: "top",
+              labels: {
+                color: "#c0c0ff",
+                font: { size: 14, family: "'Roboto Mono', monospace" },
+              },
+            },
+            tooltip: {
+              enabled: true,
+              backgroundColor: "rgba(0, 0, 0, 0.9)",
+              titleColor: "#00ffff",
+              bodyColor: "#c0c0ff",
+              titleFont: { family: "'Orbitron', sans-serif", size: 18 },
+              bodyFont: { family: "'Roboto Mono', monospace", size: 16 },
+              borderColor: "#00ffff",
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: (c) =>
+                  `${c.dataset.label || ""}: ${c.parsed.y.toFixed(1)}%`,
+              },
+            },
+          },
+        },
+        plugins: [animatedFlowPlugin],
+      });
+
+      // --- 4. FUNGSI INTERAKTIF ---
+      function updateChart(filter) {
+        const filteredData = allData.filter((d) => d.pulau === filter);
+        const newDatasets = [
+          nationalData,
+          ...filteredData.map((item, index) => ({
+            label: item.provinsi,
+            data: item.data,
+            borderColor: lineColors[index % lineColors.length],
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 5,
+            pointBackgroundColor: lineColors[index % lineColors.length],
+            tension: 0.1,
+          })),
+        ];
+        chart.data.datasets = newDatasets;
+        chart.update("none"); // Update without default animation
+
+        // Rebuild particle systems for the new datasets
+        particleSystems = [];
+        chart.data.datasets.forEach((dataset, i) => {
+          if (dataset.data.length < 2) return;
+
+          const meta = chart.getDatasetMeta(i);
+          if (meta.data.length < 2) return;
+
+          const p0 = meta.data[0];
+          const p1 = meta.data[1];
+          const startValue = dataset.data[0];
+          const endValue = dataset.data[1];
+          const diff = endValue - startValue;
+
+          let density, speed;
+          if (diff > 1) {
+            // Kenaikan signifikan
+            density = 20;
+            speed = 0.008;
+          } else if (diff < -1) {
+            // Penurunan signifikan
+            density = 5;
+            speed = 0.004;
+          } else {
+            // Stagnan
+            density = 2;
+            speed = 0.002;
+          }
+
+          const system = {
+            particles: [],
+            speed: speed,
+            getPointAt: function (progress) {
+              return {
+                x: p0.x + (p1.x - p0.x) * progress,
+                y: p0.y + (p1.y - p0.y) * progress,
+              };
+            },
+          };
+
+          for (let j = 0; j < density; j++) {
+            system.particles.push({
+              progress: Math.random(),
+              size: Math.random() * 2 + 1,
+              color: dataset.borderColor,
+            });
+          }
+          particleSystems.push(system);
+        });
+      }
+
+      function setActiveButton(button) {
+        document
+          .querySelectorAll("[data-filter]")
+          .forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
+      }
+
+      document.querySelectorAll("[data-filter]").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const filter = e.target.getAttribute("data-filter");
+          updateChart(filter);
+          setActiveButton(e.target);
+        });
+      });
+
+      // --- 5. INISIALISASI GRAFIK ---
+      const initialFilterButton = document.querySelector(
+        '[data-filter="Jawa"]'
+      );
+      initialFilterButton.click();
+    </script>
+  </body>
+</html>
